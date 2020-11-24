@@ -8,22 +8,28 @@ namespace my {
 		T* ptr;
 	public:
 		unique_ptr() : ptr(nullptr) {}
-		unique_ptr(T* newptr) : ptr(newptr) {}
+		unique_ptr(T val) : ptr(new T(val)) {}
 		unique_ptr& operator=(T* newptr) {
-			if (ptr == nullptr) {
-				ptr = newptr;
-			} else {
-				throw std::invalid_argument("cannot reassign unique_ptr");
+			if (ptr != nullptr) {
+				delete ptr;
 			}
+			ptr = newptr;
 			return *this;
 		}
 		~unique_ptr() { delete ptr; }
+
 		// deletes ability to copy
 		unique_ptr(unique_ptr& smrtptr) = delete;
 		unique_ptr& operator=(unique_ptr& smrtptr) = delete;
 
 		T& operator*() { return *ptr; }
 		T* operator->() { return ptr; }
+		bool isNULL() { return !ptr; }
+		void reset() {
+			delete ptr;
+			ptr = nullptr;
+		}
+		
 		template<typename Q>
 		friend std::ostream& operator<<(std::ostream& os, unique_ptr<Q>& smrtptr);
 	};

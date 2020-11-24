@@ -9,25 +9,27 @@ namespace my{
 		std::size_t* refCount;
 		T* ptr;
 
+		//always assign refcount smth after calling
 		void detatch() {
 			--(*refCount);
-			refCount = new std::size_t(1);
+			refCount = nullptr;
 			ptr = nullptr;
 		}
 
 	public:
-		shared_ptr() : refCount(new std::size_t(1)), ptr(new T) {}
+		// default initialization is nullptr
+		shared_ptr() : refCount(new std::size_t(0)), ptr(nullptr) {}
 		explicit shared_ptr(T val) : refCount(new std::size_t(1)), ptr(new T(val)) {}
 		shared_ptr(const shared_ptr& other) : refCount(other.refCount), ptr(other.ptr) { ++(*refCount); }
 
 		shared_ptr& operator=(const shared_ptr& other) {
-			if (refCount != nullptr) {
-				 if (*refCount == 1) {
-					delete refCount;
-					delete ptr;
-				} else {
-					detatch();
-				}
+			if (*refCount == 0) {
+				delete refCount;
+			} else if (*refCount == 1) {
+				delete refCount;
+				delete ptr;
+			} else {
+				detatch();
 			}
 			refCount = other.refCount;
 			ptr = other.ptr;
@@ -36,7 +38,7 @@ namespace my{
 		}
 
 		shared_ptr& operator=(T* newptr) {
-			if (refCount == nullptr) {
+			if (*refCount == 0) {
 				ptr = newptr;
 				*refCount = 1;
 			} else if (*refCount == 1) {
@@ -45,23 +47,37 @@ namespace my{
 			} else {
 				detatch();
 				ptr = newptr;
+				refCount = new std::size_t(1);
 			}
 			return *this;
 		}
 
 		~shared_ptr() {
-			if (refCount != nullptr) {
-				if (*refCount == 1) {
-					delete ptr;
-					delete refCount;
-				} else {
-					--(*refCount);
-				}
+			if (*refCount == 0) {
+				delete refCount;
+			} else if (*refCount == 1) {
+				delete ptr;
+				delete refCount;
+			} else {
+				--(*refCount);
 			}
 		}
 
 		T& operator*() { return *ptr; }
 		T* operator->() { return ptr; }
+		bool isNULL() { return !ptr; }
+		void reset() {
+			if (*refCount != 0) {
+				if (*refCount == 1) {
+					delete ptr;
+					ptr = nullptr;
+					*refCount = 0;
+				} else {
+					detatch();
+					refCount = new std::size_t(0);
+				}
+			}
+		}
 
 		template<typename Q>
 		friend std::ostream& operator<<(std::ostream& os, shared_ptr<Q>& smrtptr);
